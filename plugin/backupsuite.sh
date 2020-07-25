@@ -1,21 +1,14 @@
-#     FULL BACKUP UYILITY FOR ENIGMA2/OPENVISION, SUPPORTS VARIOUS MODELS     #
+#       FULL BACKUP UYILITY FOR ENIGMA2/OPENPLI, SUPPORTS VARIOUS MODELS      #
 #                   MAKES A FULLBACK-UP READY FOR FLASHING.                   #
 #                                                                             #
 ###############################################################################
 #
 #!/bin/sh
 
-if [ -d "/usr/lib64" ]; then
-	echo "multilib situation!"
-	LIBDIR="/usr/lib64"
+if [ -f /etc/visionversion ]; then
+	VISIONVERSION=`cat /etc/visionversion | sed "s/\..*//"`
 else
-	LIBDIR="/usr/lib"
-fi
-
-if [ `mkdir -p /tmp/test && ls -e1 /tmp/test 2>/dev/null && echo Yes || echo No | cat` == "Yes" ]; then
 	VISIONVERSION="7"
-else
-	VISIONVERSION="9"
 fi
 
 if [ $VISIONVERSION == "7" ]; then
@@ -32,7 +25,7 @@ fi
 POSTRM="/var/lib/opkg/info/enigma2-plugin-extensions-backupsuite.postrm"
 if [ ! -f $POSTRM ] ; then
 	echo "#!/bin/sh" > "$POSTRM"
-	echo "rm -rf $LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite" >> "$POSTRM"
+	echo "rm -rf /usr/lib/enigma2/python/Plugins/Extensions/BackupSuite" >> "$POSTRM"
 	echo 'echo "Plugin removed!"' >> "$POSTRM"
 	echo "exit 0" >> "$POSTRM"
 	chmod 755 "$POSTRM"
@@ -141,8 +134,8 @@ fi
 ########################## DECLARATION OF VARIABLES ###########################
 BACKUPDATE=`date +%Y.%m.%d_%H:%M`
 DATE=`date +%Y%m%d_%H%M`
-if [ -f "$LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite/speed.txt" ] ; then
-	ESTSPEED=`cat $LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite/speed.txt`
+if [ -f "/usr/lib/enigma2/python/Plugins/Extensions/BackupSuite/speed.txt" ] ; then
+	ESTSPEED=`cat /usr/lib/enigma2/python/Plugins/Extensions/BackupSuite/speed.txt`
 	if [ $ESTSPEED -lt 50 ] ; then
 		ESTSPEED="250"
 	fi
@@ -164,7 +157,7 @@ if [ -f "/etc/lookuptable.txt" ] ; then
 	LOOKUP="/etc/lookuptable.txt"
 	$SHOW "message36"
 else
-	LOOKUP="$LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite/lookuptable.txt"
+	LOOKUP="/usr/lib/enigma2/python/Plugins/Extensions/BackupSuite/lookuptable.txt"
 fi
 TARGET="XX"
 UBINIZE=/usr/sbin/ubinize
@@ -178,8 +171,8 @@ fi
 WORKDIR="$MEDIA/bi"
 ######################### START THE LOGFILE $LOGFILE ##########################
 echo -n "" > $LOGFILE
-log "*** THIS BACKUP IS CREATED WITH THE BACKUPSUITE PLUGIN ***"
-log "*****  https://github.com/OpenVisionE2/BackupSuite  ******"
+log "*** THIS BACKUP IS CREATED WITH THE PLUGIN BACKUPSUITE ***"
+log "***** ********************************************* ******"
 log $LINE
 log "Plugin version     = "`cat /var/lib/opkg/info/enigma2-plugin-extensions-backupsuite.control | grep "Version: " | cut -d "+" -f 2- | cut -d "-" -f1`
 log "Back-up media      = $MEDIA"
@@ -199,11 +192,11 @@ if [ -f /etc/modules-load.d/dreambox-dvb-modules-dm*.conf ] || [ -f /etc/modules
 	log "It's a dreambox! Not compatible with this script."
 	exit 1
 else
-	if [ -f /etc/openvision/model ] ; then
+	if [ -f /etc/model ] ; then
 		log "Thanks GOD it's Open Vision"
-		SEARCH=$( cat /etc/openvision/model )
+		SEARCH=$( cat /etc/model )
 	else
-		log "Not Open Vision, OpenPLi or SatDreamGr maybe?"	
+		log "Not Open Vision, Open PLi maybe?"	
 		if [ -f /proc/stb/info/hwmodel ] ; then
 			SEARCH=$( cat /proc/stb/info/hwmodel )
 		elif [ -f /proc/stb/info/gbmodel ] ; then
@@ -228,17 +221,13 @@ else
 	MODEL=`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 2`
 	SHOWNAME=`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 3`
 	FOLDER="`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 4`"
-	EXTR1="/fullbackup_$SEARCH/$DATE"
+	EXTR1="`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 5`/$DATE"
 	EXTR2="`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 6`"
 	EXTRA="$MEDIA$EXTR1$EXTR2"
 	if  [ $HARDDISK = 1 ]; then
 		MAINDEST="$MEDIA$EXTR1$FOLDER"
-		mkdir -p "$MAINDEST"
-		log "Created directory  = $MAINDEST"
 	else
 		MAINDEST="$MEDIA$FOLDER"
-		mkdir -p "$MAINDEST"
-		log "Created directory  = $MAINDEST"
 	fi
 	MKUBIFS_ARGS=`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 7`
 	UBINIZE_ARGS=`cat $LOOKUP | grep -w -m1 "$SEARCH" | cut -f 8`
@@ -322,7 +311,7 @@ mkdir -p /tmp/bi/root # this is where the complete content will be available
 log "Create directory   = /tmp/bi/root"
 sync
 mount --bind / /tmp/bi/root # the complete root at /tmp/bi/root
-## TEMPORARY WORKAROUND TO REMOVE
+## TEMPORARY WORKAROUND FOR OPENPLI 6 TO REMOVE
 ##      /var/lib/samba/private/msg.sock
 ## WHICH GIVES AN ERRORMESSAGE WHEN NOT REMOVED
 if [ -d /tmp/bi/root/var/lib/samba/private/msg.sock ] ; then
@@ -348,7 +337,7 @@ fi
 ############################## MAKING KERNELDUMP ##############################
 log $LINE
 $SHOW "message07" 2>&1 | tee -a $LOGFILE			# Create: kerneldump
-if [ $ROOTNAME != "rootfs.tar.bz2" -o $SEARCH = "h9" -o $SEARCH = "h9combo" -o $SEARCH = "i55plus" -o $SEARCH = "h10" -o $SEARCH = "h0" ] ; then
+if [ $ROOTNAME != "rootfs.tar.bz2" -o $SEARCH = "h9" -o $SEARCH = "h9combo" -o $SEARCH = "i55plus" -o $SEARCH = "h10" ] ; then
 	log "Kernel resides on $MTDPLACE" 					# Just for testing purposes
 	$NANDDUMP /dev/$MTDPLACE -qf "$WORKDIR/$KERNELNAME"
 	if [ -f "$WORKDIR/$KERNELNAME" ] ; then
@@ -375,16 +364,16 @@ else
 	elif [ $SEARCH = "duo4k" -o $SEARCH = "vuduo4k" ] ; then
 		dd if=/dev/mmcblk0p6 of=$WORKDIR/$KERNELNAME
 		log "Kernel resides on /dev/mmcblk0p6"
-	elif [ $SEARCH = "sf8008" -o $SEARCH = "sf8008m" -o $SEARCH = "ustym4kpro" -o $SEARCH = "gbtrio4k" -o $SEARCH = "gbip4k" -o $SEARCH = "viper4k" -o $SEARCH = "beyonwizv2" ] ; then
+	elif [ $SEARCH = "sf8008" -o $SEARCH = "ustym4kpro" -o $SEARCH = "gbtrio4k" -o $SEARCH = "gbip4k" -o $SEARCH = "cc1" -o $SEARCH = "viper4k" -o $SEARCH = "beyonwizv2" ] ; then
 		dd if=/dev/mmcblk0p12 of=$WORKDIR/$KERNELNAME
 		log "Kernel resides on /dev/mmcblk0p12"
 	elif [ $SEARCH = "hd60" -o $SEARCH = "hd61" ] ; then
-		$LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite/findkerneldevice.sh
+		/usr/lib/enigma2/python/Plugins/Extensions/BackupSuite/findkerneldevice.sh
 		KERNEL=`readlink -n /dev/kernel`
 		log "Kernel resides on $KERNEL"
 		dd if=/dev/kernel of=$WORKDIR/$KERNELNAME > /dev/null 2>&1
 	else
-		python $LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite/findkerneldevice.pyo
+		python /usr/lib/enigma2/python/Plugins/Extensions/BackupSuite/findkerneldevice.pyo
 		KERNEL=`cat /sys/firmware/devicetree/base/chosen/kerneldev`
 		KERNELNAME=${KERNEL:11:7}.bin
 		echo "$KERNELNAME = STARTUP_${KERNEL:17:1}"
@@ -442,7 +431,7 @@ elif [ $ACTION = "force" ] ; then
 	echo "Rename the file in the folder /vuplus/$SEARCH/noforce.update to /vuplus/$SEARCH/force.update to flash this image"
 fi
 image_version > "$MAINDEST/imageversion"
-if [ $SEARCH = "h9" -o $SEARCH = "h9combo" -o $SEARCH = "i55plus" -o $SEARCH = "h10" -o $SEARCH = "h0" ] ; then
+if [ $SEARCH = "h9" -o $SEARCH = "h9combo" -o $SEARCH = "i55plus" -o $SEARCH = "h10" ] ; then
 	log "Zgemma hisil-3798mv200 found, we need to copy more files for flashing later!"
 	dd if=/dev/mtd0 of=$MAINDEST/fastboot.bin > /dev/null 2>&1
 	dd if=/dev/mtd1 of=$MAINDEST/bootargs.bin > /dev/null 2>&1
@@ -513,7 +502,7 @@ else
 fi
 TOTALSIZE=$((($ROOTSIZE+$KERNELSIZE)/1024))
 SPEED=$(( $TOTALSIZE/$DIFF ))
-echo $SPEED > $LIBDIR/enigma2/python/Plugins/Extensions/BackupSuite/speed.txt
+echo $SPEED > /usr/lib/enigma2/python/Plugins/Extensions/BackupSuite/speed.txt
 echo $LINE >> $LOGFILE
 # "Back up done with $SPEED KB per second"
 {
