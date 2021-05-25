@@ -146,7 +146,7 @@ class BackupStart(Screen):
         model = getBoxType()
         if model in ('vuduo', 'vusolo', 'vuultimo', 'vuuno') or model.startswith('ebox'):
             files = '^.*\\.(zip|bin|jffs2)'
-        elif '4k' or 'uhd' in model or model in ('hd51', 'hd60', 'hd61', 'h7', 'sf4008', 'sf5008', 'sf8008', 'vs1500', 'et11000', 'et13000', 'cc1', 'multibox', 'v8plus', 'e4hdultra'):
+        elif '4k' or 'uhd' in model or model in ('hd51', 'hd60', 'hd61', 'h7', 'sf4008', 'sf5008', 'sf8008', 'vs1500', 'et11000', 'et13000', 'cc1', 'multibox', 'multiboxplus', 'v8plus', 'e4hdultra'):
             files = '^.*\\.(zip|bin|bz2)'
         elif model in ('h9', 'h9combo', 'i55plus', 'h10', 'dinobotu55', 'iziboxx3', 'dinoboth265', 'axashistwin', 'protek4kx1'):
             files = '^.*\\.(zip|bin|ubi)'
@@ -469,7 +469,7 @@ class FlashImageConfig(Screen):
                      'kernel.bin',
                      'rootfs.tar.bz2']
                     text += 'uImage, rootfs.ubi'
-                elif model in ('hd60', 'hd61', 'multibox', 'v8plus'):
+                elif model in ('hd60', 'hd61', 'multibox', 'multiboxplus', 'v8plus'):
                     backup_files = ['uImage', 'rootfs.tar.bz2']
                     no_backup_files = ['kernel_cfe_auto.bin',
                      'root_cfe_auto.jffs2',
